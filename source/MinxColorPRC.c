@@ -18,6 +18,9 @@
 
 #include <retro_inline.h>
 #include "PokeMini.h"
+#ifdef TARGET_GNW
+#include <gw_malloc.h>
+#endif
 
 TMinxColorPRC MinxColorPRC;
 uint8_t *PRCColorVMem = NULL;		// Complete CVRAM (16KB)
@@ -40,12 +43,22 @@ uint8_t PRCColorFlags;
 int MinxColorPRC_Create(void)
 {
 	// Create color pixels array
+#ifndef TARGET_GNW
 	PRCColorVMem = (uint8_t *)malloc(8192*2);
 	if (!PRCColorVMem) return 0;
+#else
+	PRCColorVMem = (uint8_t *)itc_malloc(8192*2);
+	if (PRCColorVMem == (uint8_t *)0xffffffff) return 0;
+#endif
 	memset(PRCColorVMem, 0, 8192*2);
 	PRCColorPixels = PRCColorVMem;
+#ifndef TARGET_GNW
 	PRCColorPixelsOld = (uint8_t *)malloc(96*64);
 	if (!PRCColorPixelsOld) return 0;
+#else
+	PRCColorPixelsOld = (uint8_t *)itc_malloc(96*64);
+	if (PRCColorPixelsOld == (uint8_t *)0xffffffff) return 0;
+#endif
 	memset(PRCColorPixelsOld, 0, 96*64);
 
 	// Reset
@@ -56,6 +69,7 @@ int MinxColorPRC_Create(void)
 
 void MinxColorPRC_Destroy(void)
 {
+#ifndef TARGET_GNW
 	if (PRCColorVMem) {
 		free(PRCColorVMem);
 		PRCColorVMem = NULL;
@@ -64,6 +78,7 @@ void MinxColorPRC_Destroy(void)
 		free(PRCColorPixelsOld);
 		PRCColorPixelsOld = NULL;
 	}
+#endif
 }
 
 void MinxColorPRC_Reset(int hardreset)
@@ -89,9 +104,9 @@ int MinxColorPRC_LoadStateStream(memstream_t *stream, uint32_t bsize)
 	POKELOADSS_STREAM_8(MinxColorPRC.LNColor1);
 	POKELOADSS_STREAM_8(MinxColorPRC.HNColor1);
 	POKELOADSS_STREAM_X(20);
-	POKELOADSS_END(16384+32);
 	MinxColorPRC.Address &= 0x3FFF;
 	PRCColorPixels = PRCColorVMem + (MinxColorPRC.ActivePage ? 0x2000 : 0);
+	POKELOADSS_END(16384+32);
 }
 
 int MinxColorPRC_SaveStateStream(memstream_t *stream)

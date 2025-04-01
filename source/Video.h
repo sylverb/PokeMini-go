@@ -54,7 +54,9 @@ typedef struct {
 	int WScale;
 	int HScale;
 	TPokeMini_GetVideo16 Get16;
+#ifndef TARGET_GNW
 	TPokeMini_GetVideo32 Get32;
+#endif
 } TPokeMini_VideoSpec;
 
 static INLINE int Interpolate8(int a, int b, int pos)
@@ -111,10 +113,10 @@ extern int VidPixelLayout;
 extern int VidEnableHighcolor;
 extern uint32_t *VidPalette32;
 extern uint16_t *VidPalette16;
+extern uint16_t *VidPalColorH16;
 extern uint32_t *VidPalColor32;
 extern uint16_t *VidPalColor16;
 extern uint32_t *VidPalColorH32;
-extern uint16_t *VidPalColorH16;
 extern TPokeMini_VideoSpec *PokeMini_VideoCurrent;
 extern int PokeMini_VideoDepth;
 extern TPokeMini_DrawVideo16 PokeMini_VideoBlit16;

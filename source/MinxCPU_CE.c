@@ -18,6 +18,7 @@
 
 // Note: Any write to MinxCPU.HL.B.I needs to be reflected into N.B.I
 
+#include "PokeMini.h"
 #include "MinxCPU.h"
 
 int MinxCPU_ExecCE(void)

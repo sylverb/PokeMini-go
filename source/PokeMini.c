@@ -21,7 +21,11 @@
 
 #include "PokeMini.h"
 #include <time.h>
+#ifndef TARGET_GNW
 #include <streams/file_stream.h>
+#else
+#include "rg_storage.h"
+#endif
 
 // Include Free BIOS
 #include "freebios.h"
@@ -31,7 +35,9 @@ int PokeMini_Flags = 0;		// Configuration flags
 uint8_t PM_BIOS[4096];		// Pokemon-Mini BIOS ($000000 to $000FFF, 4096)
 uint8_t PM_RAM[8192];		// Pokemon-Mini RAM  ($001000 to $002100, 4096 + 256)
 uint8_t *PM_ROM = NULL;		// Pokemon-Mini ROM  ($002100 to $1FFFFF, Up to 2MB)
+#ifndef TARGET_GNW
 int PM_ROM_Alloc = 0;		// Pokemon-Mini ROM Allocated on memory?
+#endif
 int PM_ROM_Size = 0;		// Pokemon-Mini ROM Size
 int PM_ROM_Mask = 0;		// Pokemon-Mini ROM Mask
 int PokeMini_LCDMode = 0;	// LCD Mode
@@ -93,7 +99,9 @@ int PokeMini_Create(int flags, int soundfifo)
 	memset(PM_RAM, 0xFF, 8192);	// RAM + IO
 
 	// Dummy ROM (In case LoadROM fail)
+#ifndef TARGET_GNW
 	PM_ROM_Alloc = 0;
+#endif
 	PM_ROM_Mask = 0x1FFF;
 	PM_ROM_Size = 0x2000;
 	PM_ROM = (unsigned char *)PM_RAM;
@@ -138,11 +146,13 @@ void PokeMini_Destroy()
 	MinxCPU_Destroy();
 
 	// Free ROM if was allocated
+#ifndef TARGET_GNW
 	if (PM_ROM_Alloc) {
 		free(PM_ROM);
 		PM_ROM = NULL;
 		PM_ROM_Alloc = 0;
 	}
+#endif
 
 	// Free color info
 	PokeMini_FreeColorInfo();
@@ -190,6 +200,7 @@ int PokeMini_LoadBIOSFile(const char *filename)
 {
 	int64_t readbytes;
 	// Open file
+#ifndef TARGET_GNW
 	RFILE *fbios = filestream_open(filename,
 			RETRO_VFS_FILE_ACCESS_READ,
 			RETRO_VFS_FILE_ACCESS_HINT_NONE);
@@ -202,6 +213,14 @@ int PokeMini_LoadBIOSFile(const char *filename)
 
 	// Close file
 	filestream_close(fbios);
+#else
+	FILE *fbios = fopen(filename, "rb");
+	if (!fbios)
+		return 0;
+	readbytes = fread(PM_BIOS, 1, 4096, fbios);
+	PokeMini_FreeBIOS = 0;
+	fclose(fbios);
+#endif
 
 	return (readbytes == 4096);
 }
@@ -215,6 +234,7 @@ int PokeMini_LoadFreeBIOS(void)
 }
 
 // New MIN ROM
+#ifndef TARGET_GNW
 int PokeMini_NewMIN(uint32_t size)
 {
 	// Allocate ROM and set cartridge size
@@ -233,6 +253,7 @@ int PokeMini_NewMIN(uint32_t size)
 
 	return 1;
 }
+#endif
 
 /* Free color information */
 void PokeMini_FreeColorInfo(void)
@@ -267,6 +288,7 @@ int PokeMini_LoadEEPROMFile(const char *filename)
 {
 	int64_t readbytes;
 	// Open file
+#ifndef TARGET_GNW
 	RFILE *fi = filestream_open(filename,
 			RETRO_VFS_FILE_ACCESS_READ,
 			RETRO_VFS_FILE_ACCESS_HINT_NONE);
@@ -276,6 +298,13 @@ int PokeMini_LoadEEPROMFile(const char *filename)
 	// Read content
 	readbytes = filestream_read(fi, EEPROM, 8192);
 	filestream_close(fi);
+#else
+	FILE *fi = fopen(filename, "rb");
+	if (!fi)
+		return 0;
+	readbytes = fread(EEPROM, 1, 8192, fi);
+	fclose(fi);
+#endif
 
 	return (readbytes == 8192);
 }
@@ -285,6 +314,7 @@ int PokeMini_SaveEEPROMFile(const char *filename)
 {
 	int64_t writebytes;
 	// Open file
+#ifndef TARGET_GNW
 	RFILE *fo = filestream_open(filename,
 			RETRO_VFS_FILE_ACCESS_WRITE,
 			RETRO_VFS_FILE_ACCESS_HINT_NONE);
@@ -294,10 +324,18 @@ int PokeMini_SaveEEPROMFile(const char *filename)
 	// Read content
 	writebytes = filestream_write(fo, EEPROM, 8192);
 	filestream_close(fo);
+#else
+	FILE *fo = fopen(filename, "wb");
+	if (!fo)
+		return 0;
+	writebytes = fwrite(EEPROM, 1, 8192, fo);
+	fclose(fo);
+#endif
 
 	return (writebytes == 8192);
 }
 
+#ifndef TARGET_GNW
 // Load emulator state from memory stream
 int PokeMini_LoadSSStream(uint8_t *buffer, uint64_t size)
 {
@@ -404,7 +442,7 @@ int PokeMini_LoadSSStream(uint8_t *buffer, uint64_t size)
 				memstream_set_buffer(NULL, 0);
 				return 0;
 			}
-		} else if (!strcmp(PMiniStr, "LCD-")) {		// Audio
+		} else if (!strcmp(PMiniStr, "AUD-")) {		// Audio
 			if (!MinxAudio_LoadStateStream(stream, BSize)) {
 				memstream_close(stream);
 				memstream_set_buffer(NULL, 0);
@@ -426,7 +464,121 @@ int PokeMini_LoadSSStream(uint8_t *buffer, uint64_t size)
 
 	return 1;
 }
+#else
+// Load emulator state from memory stream
+int PokeMini_LoadSSStream(const char *filename, uint64_t size)
+{
+	FILE *file;
+	int readbytes;
+	char PMiniStr[PMTMPV];
+	uint32_t PMiniID, StatTime, BSize;
 
+	// Open memory stream
+	file = fopen(filename, "rb");
+	if (file == NULL)
+		return 0;
+
+	// Read content
+	PMiniStr[12] = 0;
+	readbytes = fread(PMiniStr, 1, 12, file);	// Read File ID
+	if ((readbytes != 12) || strcmp(PMiniStr, "PokeMiniStat")) {
+		fclose(file);
+		return 0;
+	}
+	readbytes = fread(&PMiniID, 1, 4, file);	// Read State ID
+	if ((readbytes != 4) || (PMiniID != PokeMini_ID)) {
+		fclose(file);
+		return 0;
+	}
+	readbytes = fread(&StatTime, 1, 4, file);	// Read Time
+	if (readbytes != 4) {
+		fclose(file);
+		return 0;
+	}
+
+	// Read State Structure
+	PMiniStr[4] = 0;
+	while (1) {
+		readbytes = fread(PMiniStr, 1, 4, file);
+		if (readbytes != 4) {
+			fclose(file);
+			return 0;
+		}
+		readbytes = fread(&BSize, 1, 4, file);
+		if (readbytes != 4) {
+			fclose(file);
+			return 0;
+		}
+		if (!strcmp(PMiniStr, "RAM-")) {		// RAM
+			readbytes = fread(PM_RAM, 1, 0x1000, file);
+			if ((BSize != 0x1000) || (readbytes != 0x1000)) {
+				fclose(file);
+				return 0;
+			}
+		} else if (!strcmp(PMiniStr, "REG-")) {		// Register I/O
+			readbytes = fread(PM_IO, 1, 256, file);
+			if ((BSize != 256) || (readbytes != 256)) {
+				fclose(file);
+				return 0;
+			}
+		} else if (!strcmp(PMiniStr, "CPU-")) {		// CPU
+			if (!MinxCPU_LoadStateStream(file, BSize)) {
+				fclose(file);
+				return 0;
+			}
+		} else if (!strcmp(PMiniStr, "IRQ-")) {		// IRQ
+			if (!MinxIRQ_LoadStateStream(file, BSize)) {
+				fclose(file);
+				return 0;
+			}
+		} else if (!strcmp(PMiniStr, "TMR-")) {		// Timers
+			if (!MinxTimers_LoadStateStream(file, BSize)) {
+				fclose(file);
+				return 0;
+			}
+		} else if (!strcmp(PMiniStr, "PIO-")) {		// Parallel IO
+			if (!MinxIO_LoadStateStream(file, BSize)) {
+				fclose(file);
+				return 0;
+			}
+		} else if (!strcmp(PMiniStr, "PRC-")) {		// PRC
+			if (!MinxPRC_LoadStateStream(file, BSize)) {
+				fclose(file);
+				return 0;
+			}
+		} else if (!strcmp(PMiniStr, "CPM-")) {		// Color PRC
+			if (!MinxColorPRC_LoadStateStream(file, BSize)) {
+				fclose(file);
+				return 0;
+			}
+		} else if (!strcmp(PMiniStr, "LCD-")) {		// LCD
+			if (!MinxLCD_LoadStateStream(file, BSize)) {
+				fclose(file);
+				return 0;
+			}
+		} else if (!strcmp(PMiniStr, "AUD-")) {		// Audio
+			if (!MinxAudio_LoadStateStream(file, BSize)) {
+				fclose(file);
+				return 0;
+			}
+		} else if (!strcmp(PMiniStr, "END-")) {
+			break;
+		}
+	}
+	fclose(file);
+
+	// Update RTC if requested
+	if (CommandLine.updatertc == 1)
+		MinxTimers.SecTimerCnt += (uint32_t)time(NULL) - StatTime;
+
+	// Synchronize with host time
+	PokeMini_SyncHostTime();
+
+	return 1;
+}
+#endif
+
+#ifndef TARGET_GNW
 /* Save emulator state to memory stream */
 int PokeMini_SaveSSStream(uint8_t *buffer, uint64_t size)
 {
@@ -491,6 +643,70 @@ int PokeMini_SaveSSStream(uint8_t *buffer, uint64_t size)
 
 	return 1;
 }
+#else
+/* Save emulator state to memory stream */
+int PokeMini_SaveSSStream(const char *filename, uint64_t size)
+{
+	/* TODO: Error check bytes written */
+	FILE *file;
+	uint32_t PMiniID, StatTime, BSize;
+
+	// Open memory stream
+	file = fopen(filename, "wb");
+	if (file == NULL)
+		return 0;
+
+	// Write content
+	fwrite("PokeMiniStat", 1, 12, file);	// Write File ID
+	PMiniID = PokeMini_ID;
+	fwrite(&PMiniID, 1, 4, file);	// Write State ID
+	StatTime = (uint32_t)time(NULL);
+	fwrite(&StatTime, 1, 4, file);	// Write Time
+
+	// Read State Structure
+	// - RAM
+	fwrite("RAM-", 1, 4, file);
+	BSize = 0x1000;
+	fwrite(&BSize, 1, 4, file);
+	fwrite(PM_RAM, 1, 0x1000, file);
+	// - Registers I/O
+	fwrite("REG-", 1, 4, file);
+	BSize = 256;
+	fwrite(&BSize, 1, 4, file);
+	fwrite(PM_IO, 1, 256, file);
+	// - CPU Interface
+	fwrite("CPU-", 1, 4, file);
+	MinxCPU_SaveStateStream(file);
+	// - IRQ Interface
+	fwrite("IRQ-", 1, 4, file);
+	MinxIRQ_SaveStateStream(file);
+	// - Timers Interface
+	fwrite("TMR-", 1, 4, file);
+	MinxTimers_SaveStateStream(file);
+	// - Parallel IO Interface
+	fwrite("PIO-", 1, 4, file);
+	MinxIO_SaveStateStream(file);
+	// - PRC Interface
+	fwrite("PRC-", 1, 4, file);
+	MinxPRC_SaveStateStream(file);
+	// - Color PRC Interface
+	fwrite("CPM-", 1, 4, file);
+	MinxColorPRC_SaveStateStream(file);
+	// - LCD Interface
+	fwrite("LCD-", 1, 4, file);
+	MinxLCD_SaveStateStream(file);
+	// - Audio Interface
+	fwrite("AUD-", 1, 4, file);
+	MinxAudio_SaveStateStream(file);
+	// - EOF
+	fwrite("END-", 1, 4, file);
+	BSize = 0;
+	fwrite(&BSize, 1, 4, file);
+	fclose(file);
+
+	return 1;
+}
+#endif
 
 // Reset emulation
 void PokeMini_Reset(int hardreset)
@@ -513,6 +729,7 @@ void PokeMini_Reset(int hardreset)
 	MinxCPU_Reset(hardreset);
 
 	// Change BIOS
+#ifndef TARGET_GNW
 	if (!PokeMini_FreeBIOS && CommandLine.forcefreebios)
 		PokeMini_LoadFreeBIOS();
 	if (PokeMini_FreeBIOS && !CommandLine.forcefreebios)
@@ -522,6 +739,11 @@ void PokeMini_Reset(int hardreset)
 			if (FileExist(CommandLine.bios_file))
 				PokeMini_LoadBIOSFile(CommandLine.bios_file);
 	}
+#else
+	PokeMini_LoadFreeBIOS();
+	if (rg_storage_exists(CommandLine.bios_file))
+		PokeMini_LoadBIOSFile(CommandLine.bios_file);
+#endif
 
 	// Synchronize with host time
 	PokeMini_SyncHostTime();

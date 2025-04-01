@@ -17,6 +17,9 @@
 */
 
 #include "PokeMini.h"
+#ifdef TARGET_GNW
+#include <gw_malloc.h>
+#endif
 
 TMinxIO MinxIO;
 uint8_t *EEPROM = NULL;
@@ -39,8 +42,13 @@ void MinxIO_EEPROM_Write(uint8_t data);
 int MinxIO_Create(void)
 {
 	// Create EEPROM memory & format it
+#ifndef TARGET_GNW
 	EEPROM = (uint8_t *)malloc(8192);
 	if (!EEPROM) return 0;
+#else
+	EEPROM = (uint8_t *)itc_malloc(8192);
+	if (EEPROM == (uint8_t *)0xffffffff) return 0;
+#endif
 	MinxIO_FormatEEPROM();
 
 	// Reset
@@ -51,10 +59,12 @@ int MinxIO_Create(void)
 
 void MinxIO_Destroy(void)
 {
+#ifndef TARGET_GNW
 	if (EEPROM) {
 		free(EEPROM);
 		EEPROM = NULL;
 	}
+#endif
 }
 
 void MinxIO_Reset(int hardreset)
@@ -107,14 +117,18 @@ int MinxIO_SaveStateStream(memstream_t *stream)
 
 int MinxIO_FormatEEPROM(void)
 {
+#ifndef TARGET_GNW
 	if (!EEPROM) return 0;
+#endif
 	memset(EEPROM, 0xFF, 8192);
 	return 1;
 }
 
 void MinxIO_Keypad(uint8_t key, int pressed)
 {
+#ifndef TARGET_GNW
 	if (!EEPROM) return;
+#endif
 	switch (key) {
 		case MINX_KEY_A:	// Key A
 			if (pressed) {
@@ -188,10 +202,13 @@ void MinxIO_BatteryLow(int low)
 	else PMR_SYS_BATT &= 0x1F;
 }
 
+#include <stdio.h>
 void MinxIO_SetTimeStamp(uint8_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t min, uint8_t sec)
 {
 	uint8_t checksum;
+#ifndef TARGET_GNW
 	if (!EEPROM) return;
+#endif
 	checksum = year + month + day + hour + min + sec;
 	PMR_SYS_CTRL3 |= 0x02;
 	EEPROM[0x1FF6] = 0x00;

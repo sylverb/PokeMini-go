@@ -21,9 +21,17 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#ifndef TARGET_GNW
 #include <libretro.h>
 #include <retro_inline.h>
 #include <streams/memory_stream.h>
+#else
+#include <stdio.h>
+#define memstream_t FILE
+#define memstream_read(stream, buffer, size) fread(buffer, 1, size, stream)
+#define memstream_write(stream, buffer, size) fwrite(buffer, 1, size, stream)
+#define memstream_seek(stream, offset, whence) fseek(stream, offset, whence)
+#endif
 
 // Common functions
 #include "PMCommon.h"
@@ -48,7 +56,9 @@ extern int PokeMini_HostBattStatus;	// Host battery status
 // Number of cycles to process on hardware
 extern int PokeHWCycles;
 
+#ifndef TARGET_GNW
 extern retro_log_printf_t log_cb;
+#endif
 
 enum {
 	LCDMODE_ANALOG = 0,
@@ -231,11 +241,19 @@ int PokeMini_LoadEEPROMFile(const char *filename);
 // Save EEPROM data
 int PokeMini_SaveEEPROMFile(const char *filename);
 
+#ifndef TARGET_GNW
 // Load emulator state from memory stream
 int PokeMini_LoadSSStream(uint8_t *buffer, uint64_t size);
 
 // Save emulator state to memory stream
 int PokeMini_SaveSSStream(uint8_t *buffer, uint64_t size);
+#else
+// Load emulator state from memory stream
+int PokeMini_LoadSSStream(const char *filename, uint64_t size);
+
+// Save emulator state to memory stream
+int PokeMini_SaveSSStream(const char *filename, uint64_t size);
+#endif
 
 // Reset CPU
 void PokeMini_Reset(int hardreset);

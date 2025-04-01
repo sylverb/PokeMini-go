@@ -20,14 +20,18 @@
 #include "PokeMini.h"
 #include <ctype.h>
 
+#ifndef TARGET_GNW
 #include <string/stdstring.h>
 #include <file/file_path.h>
+#endif
 
 /* Return true if the string is valid and non-empty */
+#ifndef TARGET_GNW
 int StringIsSet(char *str)
 {
 	return string_is_empty(str) ? 0 : 1;
 }
+#endif
 
 /* Get multiple of 2 (Mask) */
 int GetMultiple2Mask(int input)
@@ -42,7 +46,9 @@ int GetMultiple2Mask(int input)
 }
 
 /* Check if file exists */
+#ifndef TARGET_GNW
 int FileExist(const char *filename)
 {
 	return (!string_is_empty(filename) && path_is_valid(filename)) ? 1 : 0;
 }
+#endif

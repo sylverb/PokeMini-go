@@ -17,6 +17,7 @@
 */
 
 #include "PokeMini.h"
+#include "MinxCPU.h"
 
 TMinxCPU MinxCPU;
 

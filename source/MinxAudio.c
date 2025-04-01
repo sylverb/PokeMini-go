@@ -18,6 +18,9 @@
 
 #include <retro_inline.h>
 #include "PokeMini.h"
+#ifdef TARGET_GNW
+#include "gw_malloc.h"
+#endif
 
 TMinxAudio MinxAudio;
 int AudioEnabled = 0;
@@ -107,8 +110,13 @@ int MinxAudio_Create(int audioenable, int fifosize)
 	}
 	if ((audioenable) && (fifosize))
 	{
+#ifndef TARGET_GNW
 		MinxAudio_FIFO = (int16_t *)malloc(MinxAudio_FIFOSize*2);
 		if (!MinxAudio_FIFO) return 0;
+#else
+		MinxAudio_FIFO = (int16_t *)itc_malloc(MinxAudio_FIFOSize*2);
+		if (MinxAudio_FIFO == (int16_t *)0xffffffff) return 0;
+#endif
 		memset(MinxAudio_FIFO, 0, MinxAudio_FIFOSize*2);
 	}
 

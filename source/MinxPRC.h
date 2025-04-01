@@ -20,7 +20,9 @@
 #define MINXHW_PRC
 
 #include <stdint.h>
+#ifndef TARGET_GNW
 #include <streams/memory_stream.h>
+#endif
 
 typedef struct {
 	// Internal processing

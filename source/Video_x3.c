@@ -22,7 +22,9 @@
 const TPokeMini_VideoSpec PokeMini_Video3x3 = {
 	3, 3,
 	PokeMini_GetVideo3x3_16,
+#ifndef TARGET_GNW
 	PokeMini_GetVideo3x3_32
+#endif
 };
 
 const int LCDMask3x3[3*3] = {
@@ -31,6 +33,7 @@ const int LCDMask3x3[3*3] = {
 	128, 160, 160
 };
 
+#ifndef TARGET_GNW
 TPokeMini_DrawVideo32 PokeMini_GetVideo3x3_32(int filter, int lcdmode)
 {
 	if (filter == PokeMini_Scanline) {
@@ -56,6 +59,7 @@ TPokeMini_DrawVideo32 PokeMini_GetVideo3x3_32(int filter, int lcdmode)
 		}
 	}
 }
+#endif
 
 TPokeMini_DrawVideo16 PokeMini_GetVideo3x3_16(int filter, int lcdmode)
 {
@@ -83,6 +87,7 @@ TPokeMini_DrawVideo16 PokeMini_GetVideo3x3_16(int filter, int lcdmode)
 	}
 }
 
+#ifndef TARGET_GNW
 void PokeMini_VideoAScanLine3x3_32(uint32_t *screen, int pitchW)
 {
 	int xk, yk, LCDY;
@@ -118,6 +123,7 @@ void PokeMini_VideoAScanLine3x3_32(uint32_t *screen, int pitchW)
 		LCDY += 96;
 	}
 }
+#endif
 
 void PokeMini_VideoAScanLine3x3_16(uint16_t *screen, int pitchW)
 {
@@ -155,6 +161,7 @@ void PokeMini_VideoAScanLine3x3_16(uint16_t *screen, int pitchW)
 	}
 }
 
+#ifndef TARGET_GNW
 void PokeMini_Video3ScanLine3x3_32(uint32_t *screen, int pitchW)
 {
 	int xk, yk, LCDY;
@@ -202,6 +209,7 @@ void PokeMini_Video3ScanLine3x3_32(uint32_t *screen, int pitchW)
 		LCDY += 96;
 	}
 }
+#endif
 
 void PokeMini_Video3ScanLine3x3_16(uint16_t *screen, int pitchW)
 {
@@ -251,6 +259,7 @@ void PokeMini_Video3ScanLine3x3_16(uint16_t *screen, int pitchW)
 	}
 }
 
+#ifndef TARGET_GNW
 void PokeMini_Video2ScanLine3x3_32(uint32_t *screen, int pitchW)
 {
 	int xk, yk, LCDY;
@@ -291,6 +300,7 @@ void PokeMini_Video2ScanLine3x3_32(uint32_t *screen, int pitchW)
 		LCDY += 96;
 	}
 }
+#endif
 
 void PokeMini_Video2ScanLine3x3_16(uint16_t *screen, int pitchW)
 {
@@ -333,6 +343,7 @@ void PokeMini_Video2ScanLine3x3_16(uint16_t *screen, int pitchW)
 	}
 }
 
+#ifndef TARGET_GNW
 void PokeMini_VideoAMatrix3x3_32(uint32_t *screen, int pitchW)
 {
 	int xk, yk, level, LCDY, maskH;
@@ -356,6 +367,7 @@ void PokeMini_VideoAMatrix3x3_32(uint32_t *screen, int pitchW)
 		}
 	}
 }
+#endif
 
 void PokeMini_VideoAMatrix3x3_16(uint16_t *screen, int pitchW)
 {
@@ -381,6 +393,7 @@ void PokeMini_VideoAMatrix3x3_16(uint16_t *screen, int pitchW)
 	}
 }
 
+#ifndef TARGET_GNW
 void PokeMini_Video3Matrix3x3_32(uint32_t *screen, int pitchW)
 {
 	int xk, yk, level, LCDY, maskH;
@@ -408,6 +421,7 @@ void PokeMini_Video3Matrix3x3_32(uint32_t *screen, int pitchW)
 		}
 	}
 }
+#endif
 
 void PokeMini_Video3Matrix3x3_16(uint16_t *screen, int pitchW)
 {
@@ -437,6 +451,7 @@ void PokeMini_Video3Matrix3x3_16(uint16_t *screen, int pitchW)
 	}
 }
 
+#ifndef TARGET_GNW
 void PokeMini_Video2Matrix3x3_32(uint32_t *screen, int pitchW)
 {
 	int xk, yk, level, LCDY, maskH;
@@ -461,6 +476,7 @@ void PokeMini_Video2Matrix3x3_32(uint32_t *screen, int pitchW)
 		}
 	}
 }
+#endif
 
 void PokeMini_Video2Matrix3x3_16(uint16_t *screen, int pitchW)
 {
@@ -487,6 +503,7 @@ void PokeMini_Video2Matrix3x3_16(uint16_t *screen, int pitchW)
 	}
 }
 
+#ifndef TARGET_GNW
 void PokeMini_VideoANone3x3_32(uint32_t *screen, int pitchW)
 {
 	int xk, yk, LCDY;
@@ -515,6 +532,7 @@ void PokeMini_VideoANone3x3_32(uint32_t *screen, int pitchW)
 		LCDY += 96;
 	}
 }
+#endif
 
 void PokeMini_VideoANone3x3_16(uint16_t *screen, int pitchW)
 {
@@ -545,6 +563,7 @@ void PokeMini_VideoANone3x3_16(uint16_t *screen, int pitchW)
 	}
 }
 
+#ifndef TARGET_GNW
 void PokeMini_Video3None3x3_32(uint32_t *screen, int pitchW)
 {
 	int xk, yk, LCDY;
@@ -585,6 +604,7 @@ void PokeMini_Video3None3x3_32(uint32_t *screen, int pitchW)
 		LCDY += 96;
 	}
 }
+#endif
 
 void PokeMini_Video3None3x3_16(uint16_t *screen, int pitchW)
 {
@@ -627,6 +647,7 @@ void PokeMini_Video3None3x3_16(uint16_t *screen, int pitchW)
 	}
 }
 
+#ifndef TARGET_GNW
 void PokeMini_Video2None3x3_32(uint32_t *screen, int pitchW)
 {
 	int xk, yk, LCDY;
@@ -660,6 +681,7 @@ void PokeMini_Video2None3x3_32(uint32_t *screen, int pitchW)
 		LCDY += 96;
 	}
 }
+#endif
 
 void PokeMini_Video2None3x3_16(uint16_t *screen, int pitchW)
 {
@@ -695,6 +717,7 @@ void PokeMini_Video2None3x3_16(uint16_t *screen, int pitchW)
 	}
 }
 
+#ifndef TARGET_GNW
 void PokeMini_VideoColor3x3_32(uint32_t *screen, int pitchW)
 {
 	int xk, yk, LCDY;
@@ -723,6 +746,7 @@ void PokeMini_VideoColor3x3_32(uint32_t *screen, int pitchW)
 		LCDY += 96;
 	}
 }
+#endif
 
 void PokeMini_VideoColor3x3_16(uint16_t *screen, int pitchW)
 {
@@ -753,6 +777,7 @@ void PokeMini_VideoColor3x3_16(uint16_t *screen, int pitchW)
 	}
 }
 
+#ifndef TARGET_GNW
 void PokeMini_VideoColorL3x3_32(uint32_t *screen, int pitchW)
 {
 	int xk, yk, LCDY;
@@ -788,6 +813,7 @@ void PokeMini_VideoColorL3x3_32(uint32_t *screen, int pitchW)
 		LCDY += 96;
 	}
 }
+#endif
 
 void PokeMini_VideoColorL3x3_16(uint16_t *screen, int pitchW)
 {
@@ -825,6 +851,7 @@ void PokeMini_VideoColorL3x3_16(uint16_t *screen, int pitchW)
 	}
 }
 
+#ifndef TARGET_GNW
 void PokeMini_VideoColorH3x3_32(uint32_t *screen, int pitchW)
 {
 	int xk, yk, LCDY;
@@ -853,6 +880,7 @@ void PokeMini_VideoColorH3x3_32(uint32_t *screen, int pitchW)
 		LCDY += 96;
 	}
 }
+#endif
 
 void PokeMini_VideoColorH3x3_16(uint16_t *screen, int pitchW)
 {

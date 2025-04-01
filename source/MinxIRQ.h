@@ -20,7 +20,9 @@
 #define MINXHW_IRQ
 
 #include <stdint.h>
+#ifndef TARGET_GNW
 #include <streams/memory_stream.h>
+#endif
 
 // Master IRQ enable
 extern int MinxIRQ_MasterIRQ;

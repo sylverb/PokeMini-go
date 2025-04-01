@@ -18,25 +18,31 @@
 #include <retro_inline.h>
 #include "PokeMini.h"
 #include "PokeMini_ColorPal.h"
+#ifdef TARGET_GNW
+#include <gw_malloc.h>
+#endif
 
 int VidPixelLayout = 0;
 int VidEnableHighcolor = 0;
+#ifndef TARGET_GNW
 uint32_t *VidPalette32 = NULL;
-uint16_t *VidPalette16 = NULL;
 uint32_t *VidPalColor32 = NULL;
-uint16_t *VidPalColor16 = NULL;
 uint32_t *VidPalColorH32 = NULL;
+TPokeMini_DrawVideo32 PokeMini_VideoBlit32 = NULL;
+#endif
+uint16_t *VidPalette16 = NULL;
 uint16_t *VidPalColorH16 = NULL;
+uint16_t *VidPalColor16 = NULL;
 TPokeMini_VideoSpec *PokeMini_VideoCurrent = NULL;
 int PokeMini_VideoDepth = 0;
 TPokeMini_DrawVideo16 PokeMini_VideoBlit16 = NULL;
-TPokeMini_DrawVideo32 PokeMini_VideoBlit32 = NULL;
 TPokeMini_DrawVideoPtr PokeMini_VideoBlit = NULL;
 
 int PokeMini_SetVideo(TPokeMini_VideoSpec *videospec, int bpp, int dotmatrix, int lcdmode)
 {
 	if (!videospec) return 0;
 	PokeMini_VideoCurrent = (TPokeMini_VideoSpec *)videospec;
+#ifndef TARGET_GNW
 	PokeMini_VideoBlit16 = PokeMini_VideoCurrent->Get16(dotmatrix, lcdmode);
 	PokeMini_VideoBlit32 = PokeMini_VideoCurrent->Get32(dotmatrix, lcdmode);
 	if (bpp == 32) {
@@ -46,9 +52,14 @@ int PokeMini_SetVideo(TPokeMini_VideoSpec *videospec, int bpp, int dotmatrix, in
 		PokeMini_VideoBlit = (TPokeMini_DrawVideoPtr)PokeMini_VideoBlit16;
 		PokeMini_VideoDepth = 16;
 	}
+#else
+	PokeMini_VideoBlit = (TPokeMini_DrawVideoPtr)PokeMini_VideoCurrent->Get16(dotmatrix, lcdmode);;
+	PokeMini_VideoDepth = 16;
+#endif
 	return PokeMini_VideoDepth;
 }
 
+#ifndef TARGET_GNW
 void PokeMini_VideoRect_32(uint32_t *screen, int pitchW, int x, int y, int width, int height, uint32_t color)
 {
 	int xc, yc;
@@ -60,6 +71,7 @@ void PokeMini_VideoRect_32(uint32_t *screen, int pitchW, int x, int y, int width
 		screen += pitchW;
 	}
 }
+#endif
 
 void PokeMini_VideoRect_16(uint16_t *screen, int pitchW, int x, int y, int width, int height, uint16_t color)
 {
@@ -89,6 +101,7 @@ static INLINE int ExpCurve(int value, int strength)
 	return Interpolate8(value, curve, strength);
 }
 
+#ifndef TARGET_GNW
 void PokeMini_VideoPalette_32(uint32_t P0Color, uint32_t P1Color, int contrastboost, int brightoffset)
 {
 	int i;
@@ -110,13 +123,18 @@ void PokeMini_VideoPalette_32(uint32_t P0Color, uint32_t P1Color, int contrastbo
 		}
 	}
 }
+#endif
 
 void PokeMini_VideoPalette_16(uint16_t P0Color, uint16_t P1Color, int contrastboost, int brightoffset)
 {
 	int i;
 	contrastboost = contrastboost * 255 / 100;
 	brightoffset = brightoffset * 255 / 100;
+#ifndef TARGET_GNW
 	if (!VidPalette16) VidPalette16 = (uint16_t *)malloc(256*2);
+#else
+	if (!VidPalette16) VidPalette16 = (uint16_t *)itc_malloc(256*2);
+#endif
 	if (VidPixelLayout == PokeMini_RGB15) {
 		// RGB 15-Bits
 		for (i=0; i<256; i++) VidPalette16[i] = InterpolateRGB15(P0Color, P1Color, ExpCurve(i - brightoffset, contrastboost));
@@ -135,7 +153,11 @@ void PokeMini_VideoPalette_16(uint16_t P0Color, uint16_t P1Color, int contrastbo
 		VidPalColor16 = (uint16_t *)PokeMini_ColorPalBGR16;
 	}
 	if (VidEnableHighcolor) {
+#ifndef TARGET_GNW
 		if (!VidPalColorH16) VidPalColorH16 = (uint16_t *)malloc(256*256*2);
+#else
+		if (!VidPalColorH16) VidPalColorH16 = (uint16_t *)itc_malloc(256*256*2);
+#endif
 		if (VidPixelLayout == PokeMini_RGB15) {
 			// RGB 15-Bits
 			for (i=0; i<256*256; i++) VidPalColorH16[i] = InterpolateRGB15(VidPalColor16[i & 255], VidPalColor16[i >> 8], 128);
@@ -151,10 +173,12 @@ void PokeMini_VideoPalette_16(uint16_t P0Color, uint16_t P1Color, int contrastbo
 
 void PokeMini_VideoPalette_Free(void)
 {
+#ifndef TARGET_GNW
 	if (VidPalette32) { free(VidPalette32); VidPalette32 = NULL; }
-	if (VidPalette16) { free(VidPalette16); VidPalette16 = NULL; }
 	if (VidPalColorH32) { free(VidPalColorH32); VidPalColorH32 = NULL; }
+	if (VidPalette16) { free(VidPalette16); VidPalette16 = NULL; }
 	if (VidPalColorH16) { free(VidPalColorH16); VidPalColorH16 = NULL; }
+#endif
 }
 
 void PokeMini_VideoPalette_Convert(uint32_t bgr32, int pixellayout, uint32_t *out32, uint16_t *out16)
@@ -253,6 +277,8 @@ void PokeMini_VideoPalette_Index(int index, uint32_t *CustomMonoPal, int contras
 			}
 			break;
 	}
+#ifndef TARGET_GNW
 	PokeMini_VideoPalette_32(p0_32, p1_32, contrastboost, brightoffset);
+#endif
 	PokeMini_VideoPalette_16(p0_16, p1_16, contrastboost, brightoffset);
 }

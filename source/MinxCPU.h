@@ -1,5 +1,5 @@
 /*
-  PokeMini - PokÃ©mon-Mini Emulator
+  PokeMini - Pokémon-Mini Emulator
   Copyright (C) 2009-2012  JustBurn
 
   This program is free software: you can redistribute it and/or modify
@@ -21,7 +21,10 @@
 
 #include <stdint.h>
 #include <retro_inline.h>
+
+#ifndef TARGET_GNW
 #include <streams/memory_stream.h>
+#endif
 
 /* For some reason, '_BIG_ENDIAN' is always defined when
  * building for 3DS/Switch with devkitarm/a64... */

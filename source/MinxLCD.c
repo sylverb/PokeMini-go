@@ -18,6 +18,9 @@
 
 #include "PokeMini.h"
 #include "Video.h"
+#ifdef TARGET_GNW
+#include <gw_malloc.h>
+#endif
 
 TMinxLCD MinxLCD;
 int LCDDirty = 0;
@@ -40,12 +43,21 @@ const int LCDDirtyPixels[4] = {
 int MinxLCD_Create(void)
 {
 	// Create LCD memory
+#ifndef TARGET_GNW
 	LCDData = (uint8_t *)malloc(256*9);
 	if (!LCDData) return 0;
 	LCDPixelsD = (uint8_t *)malloc(96*64);
 	if (!LCDPixelsD) return 0;
 	LCDPixelsA = (uint8_t *)malloc(96*64*2);
 	if (!LCDPixelsA) return 0;
+#else
+	LCDData = (uint8_t *)itc_malloc(256*9);
+	if (LCDData == (uint8_t *)0xffffffff) return 0;
+	LCDPixelsD = (uint8_t *)itc_malloc(96*64);
+	if (LCDPixelsD == (uint8_t *)0xffffffff) return 0;
+	LCDPixelsA = (uint8_t *)itc_malloc(96*64*2);
+	if (LCDPixelsA == (uint8_t *)0xffffffff) return 0;
+#endif
 	LCDPixelsAS = (uint8_t *)LCDPixelsA + 96*64;
 
 	// Reset
@@ -56,6 +68,7 @@ int MinxLCD_Create(void)
 
 void MinxLCD_Destroy(void)
 {
+#ifndef TARGET_GNW
 	if (LCDData) {
 		free(LCDData);
 		LCDData = NULL;
@@ -68,6 +81,7 @@ void MinxLCD_Destroy(void)
 		free(LCDPixelsA);
 		LCDPixelsA = NULL;
 	}
+#endif
 }
 
 void MinxLCD_Reset(int hardreset)
@@ -108,7 +122,6 @@ int MinxLCD_LoadStateStream(memstream_t *stream, uint32_t bsize)
 	POKELOADSS_STREAM_8(MinxLCD.RMWColumn);
 	POKELOADSS_STREAM_X(42);
 	POKELOADSS_END(256*9 + 96*64 + 96*64 + 64);
-	return 1;
 }
 
 int MinxLCD_SaveStateStream(memstream_t *stream)
