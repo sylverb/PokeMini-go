@@ -29,6 +29,7 @@ typedef struct {
 	int eeprom_share;
 	int sound;
 	int piezofilter;
+	int lowpassfilter;
 	int lcdfilter;
 	int lcdmode;
 	int low_battery;
